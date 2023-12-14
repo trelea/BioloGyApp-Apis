@@ -55,7 +55,6 @@ const getFenotype = (arr, dominant, d1, d2) => {
 }
 
 
-
 //LEGEA 3 ADVANCED
 const getCombinationsForGenes = (str) => {
     let combinations = [];
@@ -65,7 +64,6 @@ const getCombinationsForGenes = (str) => {
     combinations.push(str[1] + str[3]);
     return combinations;
 }
-
 const createTableLegea3 = (arr1, arr2) => {
     const arr = []
     for (const g2 of arr2) {
