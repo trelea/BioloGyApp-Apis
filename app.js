@@ -14,55 +14,69 @@ const PORT = 3001
 
 
 /** ------------------------ LAWS DEVELOPMENT ------------------------ */
-// LEGEA 1 SI 2
-const legea2 = (patan, padruga) => {
-    let tabel = [];
-    let result="";
-    for(let i =1; i<=2; i++){
-        for(let j=1; j<=2; j++){
-            result = ""
-            result = patan["gena"+i]+padruga["gena"+j]
-            tabel.push(result)
-        }
-    }
-    for(let i=0; i<tabel.length; i++){
-        let modifiedString = tabel[i].split(''); // Convert the string to an array
-        if(modifiedString[0] !== modifiedString[0].toUpperCase() && modifiedString[1] === modifiedString[1].toUpperCase()){
-            modifiedString[0] = modifiedString[0].toUpperCase();
-            modifiedString[1] = modifiedString[1].toLowerCase();
-        } else if(modifiedString[0] === "_" && modifiedString[1] === modifiedString[1].toUpperCase()){
-            modifiedString[0] = modifiedString[1]
-            modifiedString[1] = "_"
-        }
-        tabel[i] = modifiedString.join(''); // Join the array back to a string
-    }
-    return tabel;
+// LEGEA BASIC 1 SI 2
+const getPercentageOfElements = (arr, symbol) => {
+    const countAA = arr.filter(str => str === symbol).length;
+    return (countAA / arr.length) * 100;
 }
-// LEGEA 3
-const legea3 = (patan, padruga) => {
-    let maleGametes = [patan["caracter1"]["gena1"] + patan["caracter2"]["gena1"], patan["caracter1"]["gena2"] + patan["caracter2"]["gena2"]];
-    let femaleGametes = [padruga["caracter1"]["gena1"] + padruga["caracter2"]["gena1"], padruga["caracter1"]["gena2"] + padruga["caracter2"]["gena2"]];
-    let tabel = [];
-    for (let i = 0; i < maleGametes.length; i++) {
-        for (let j = 0; j < femaleGametes.length; j++) {
-            tabel.push(maleGametes[i][0] + femaleGametes[j][0] + maleGametes[i][1] + femaleGametes[j][1]);
+const createTableLegea2 = (str1, str2) => {
+    const arr = [];
+    arr.push((str1[0].toUpperCase() === str1[0] ? str1[0] : "") + str2[0] + (str1[0].toUpperCase() !== str1[0] ? str1[0] : ""));
+    arr.push((str2[0].toUpperCase() === str2[0] ? str2[0] : "") + str1[1] + (str2[0].toUpperCase() !== str2[0] ? str2[0] : ""));
+    arr.push((str1[0].toUpperCase() === str1[0] ? str1[0] : "") + str2[1] + (str1[0].toUpperCase() !== str1[0] ? str1[0] : ""));
+    arr.push((str1[1].toUpperCase() === str1[1] ? str1[1] + str2[1] : str2[1] + str1[1]));
+    return arr;
+}
+const getGenotype = (arr) => {
+    let dictionary = {}
+    for (let combination in arr) { dictionary[String(arr[combination])] = getPercentageOfElements(arr, arr[combination]); }
+    return dictionary
+}
+const getDominant = (str1, str2) => {
+    let D = null;
+    for (let i = 0; i < str1.length; i++) {
+        if (str1[i] === str1[i].toUpperCase()) D = str1[i]
+    }
+    for (let i = 0; i < str2.length; i++) {
+        if (str2[i] === str2[i].toUpperCase()) D = str2[i]
+    }
+    return D
+}
+const getFenotype = (arr, dominant, d1, d2) => {
+    if (d1 === undefined || d1 === "") return null;
+    if (d2 === undefined || d2 === "") return null;
+    let obj = {}
+    const countAA = arr.filter(str => str.includes(dominant) === true).length;
+    const Dom = (countAA / arr.length) * 100;
+    const Rec = 100 - Dom;
+    obj[String(d1)] = Dom;
+    obj[String(d2)] = Rec;
+    return obj;
+}
+
+
+
+//LEGEA 3 ADVANCED
+const getCombinationsForGenes = (str) => {
+    let combinations = [];
+    combinations.push(str[0] + str[2]);
+    combinations.push(str[0] + str[3]);
+    combinations.push(str[1] + str[2]);
+    combinations.push(str[1] + str[3]);
+    return combinations;
+}
+
+const createTableLegea3 = (arr1, arr2) => {
+    const arr = []
+    for (const g2 of arr2) {
+        for (const g1 of arr1) {
+            let res = "";
+            for (let i = 0; i < g2.length; i++) res += g2[i] + g1[i];
+            arr.push(res)
         }
     }
-    for (let i = 0; i < tabel.length; i++) {
-        let modifiedString = tabel[i].split(''); // Convert the string to an array
-        for (let j = 0; j < modifiedString.length - 1; j += 2) {
-            if (modifiedString[j] !== modifiedString[j].toUpperCase() && modifiedString[j + 1] === modifiedString[j + 1].toUpperCase()) {
-                modifiedString[j] = modifiedString[j].toUpperCase();
-                modifiedString[j + 1] = modifiedString[j + 1].toLowerCase();
-            } else if(modifiedString[j] === "_" && modifiedString[j+1] === modifiedString[j+1].toUpperCase()){
-                modifiedString[j] = modifiedString[j+1]
-                modifiedString[j+1] = "_"
-            }
-        }
-        tabel[i] = modifiedString.join(''); // Join the array back to a string
-    }
-    return tabel;
-};
+    return arr
+}
 
 
 
@@ -215,15 +229,28 @@ app.post('/api/chat', async (req, res) => {
 app.post('/legea2', (req, res) => {
     const { male } = req.body;
     const { female } = req.body;
+    const { dominant } = req.body;
+    const { recesiv } = req.body;
     return res.status(200).json({
-        children: legea2(male, female) 
+        table: createTableLegea2(male, female),
+        genotip: getGenotype(createTableLegea2(male, female)),
+        fenotip: getFenotype(createTableLegea2(male, female), getDominant(male, female), dominant, recesiv)
     }).end()
 })
 app.post('/legea3', (req, res) => {
     const { male } = req.body;
     const { female } = req.body;
+
+    const { dominantMale } = req.body;
+    const { recesivMale } = req.body;
+
+    const { dominantFemale } = req.body;
+    const { recesivFemale } = req.body;
+
     return res.status(200).json({
-        children: legea3(male, female) 
+        maleRow: getCombinationsForGenes(male),
+        femaleRow: getCombinationsForGenes(female),
+        table: createTableLegea3(getCombinationsForGenes(male), getCombinationsForGenes(female))
     }).end()
 })
 app.listen(PORT, () => {
